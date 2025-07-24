@@ -1,90 +1,77 @@
+`timescale 1ns / 1ps
 
+module vending_machine_tb;
 
-module vending_machine_fsm_tb;
-
-    // Inputs
     reg clk;
-    reg reset;
-    reg [1:0] coin;
-    reg [1:0] select_item;
-    reg cancel;
-
-    // Outputs
+    reg rst;
+    reg [1:0] in;
+    reg [1:0] select;
     wire dispense;
-    wire [3:0] refund;
-    wire low_stock;
-    wire [6:0] balance;
+    wire [1:0] change;
 
-    // Instantiate the DUT (Device Under Test)
-    vending_machine_fsm dut (
+    vending_machine uut (
         .clk(clk),
-        .reset(reset),
-        .coin(coin),
-        .select_item(select_item),
-        .cancel(cancel),
+        .rst(rst),
+        .in(in),
+        .select(select),
         .dispense(dispense),
-        .refund(refund),
-        .low_stock(low_stock),
-        .balance(balance)
+        .change(change)
     );
 
-    // Clock Generation
-    always #5 clk = ~clk;
-  
-  initial begin
-    $dumpfile("vending_machine.vcd");         // Name of the VCD output file
-    $dumpvars(0, vending_machine_fsm_tb);     // Dump all variables in the testbench hierarchy
-end
-
-
-    // Test Sequence
     initial begin
-        // Initialize inputs
         clk = 0;
-        reset = 1;
-        coin = 2'b11;          // No coin inserted
-        select_item = 2'b00;
-        cancel = 0;
+        forever #5 clk = ~clk;
+    end
 
-        // Hold reset
-        #10 reset = 0;
+    initial begin
+        $dumpfile("vending_machine.vcd");
+        $dumpvars(0, vending_machine_tb);
+        $dumpvars(1, uut);
 
-        $display("\n=== Test 1: Insert 5 + 2 and buy Item 0 (₹7) ===");
-        coin = 2'b10; #10 coin = 2'b11; // Insert ₹5
-        coin = 2'b00; #10 coin = 2'b11; // Insert ₹1
-        coin = 2'b00; #10 coin = 2'b11; // Insert ₹1 (total = ₹7)
-        select_item = 2'b00; #20;       // Try to buy item 0
+        $display("Time\tclk\trst\tin\tselect\tdispense\tchange\tbalance\tprice\tstate");
+        $monitor("%g\t%b\t%b\t%02b\t%02b\t%b\t\t%02b\t%d\t%d\t%02b",
+                 $time, clk, rst, in, select, dispense, change,
+                 uut.balance, uut.price, uut.state);
 
+        rst = 1; in = 2'b00; select = 2'b00;
+        #12;
+        rst = 0;
+
+        in = 2'b10; select = 2'b01;
         #10;
+        in = 2'b00; select = 2'b01;
+        #30;
 
-        $display("\n=== Test 2: Insert ₹5 and try to buy Item 1 (₹10) ===");
-        coin = 2'b10; #10 coin = 2'b11; // ₹5 only
-        select_item = 2'b01; #20;       // Not enough, should NOT dispense
-
+        in = 2'b10; select = 2'b10;
         #10;
-
-        $display("\n=== Test 3: Insert ₹5 + ₹5, buy Item 1 (₹10) ===");
-        coin = 2'b10; #10 coin = 2'b11; // ₹5
-        coin = 2'b10; #10 coin = 2'b11; // ₹5 (total ₹10)
-        select_item = 2'b01; #20;       // Buy item 1
-
+        in = 2'b01; select = 2'b10;
         #10;
+        in = 2'b00; select = 2'b10;
+        #30;
 
-        $display("\n=== Test 4: Cancel and Refund ===");
-        coin = 2'b01; #10 coin = 2'b11; // ₹2
-        cancel = 1; #10 cancel = 0;     // Cancel, should refund ₹2
-
+        in = 2'b10; select = 2'b11;
         #10;
+        in = 2'b10; select = 2'b11;
+        #10;
+        in = 2'b00; select = 2'b11;
+        #30;
 
-        $display("\n=== Test 5: Buy Item 0 until Low Stock ===");
-        repeat (4) begin
-            coin = 2'b10; #10 coin = 2'b11; // ₹5
-            coin = 2'b00; #10 coin = 2'b11; // ₹1
-            coin = 2'b00; #10 coin = 2'b11; // ₹1
-            select_item = 2'b00; #20;       // Buy item 0
-        end
+        in = 2'b10; select = 2'b10;
+        #10;
+        in = 2'b10; select = 2'b10;
+        #10;
+        in = 2'b00; select = 2'b10;
+        #30;
 
-        #50 $finish;
+        in = 2'b10; select = 2'b01;
+        #10;
+        rst = 1;
+        #10;
+        rst = 0;
+        in = 2'b00; select = 2'b00;
+        #20;
+
+        $finish;
     end
 
 endmodule
