@@ -40,9 +40,5 @@ The machine operates with a simple three-state FSM:
 4. Buy Item B with ₹20 and receive ₹5 change
 5. Reset during transaction
 
-## 🛠️ Simulation Instructions
-
-To run the simulation with Icarus Verilog and GTKWave:
-
-```bash
+![Vending machine output](vend.png)
 
